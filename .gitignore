@@ -1,0 +1,8 @@
+# build outputs (VCDs, .gpubin, renders, executables, verilated models)
+build/
+obj_dir/
+
+*.vcd
+*.log
+__pycache__/
+*.pyc
