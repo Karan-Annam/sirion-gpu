@@ -1,7 +1,5 @@
 # Tooling
 
-What actually went into building, verifying, and writing this up.
-
 ## Build and verification
 
 - Verilator 5.x for RTL simulation (both 5.040 on MSYS2 and 5.020 on WSL
@@ -20,23 +18,30 @@ Host-specific gotchas (the MSYS2 PATH trap, Verilator version differences,
 Windows SDK macro collisions, viewing PPM renders and waveforms) are in
 [docs/BUILDING.md](docs/BUILDING.md).
 
-## AI-assisted coding
+## How much of this is AI, honestly
 
-I used Claude Code as a coding tool throughout this project, the way a lot of
-people now pair-program with an LLM. I wrote the spec and the milestone plan,
-ran the build, and did the hardware debugging myself once things were running
-against the golden ISS.
+A lot of the first-draft code, and essentially all of the documentation,
+including this file, WALKTHROUGH.md, and the README. Claude Code built most
+of it from a spec and milestone plan I wrote, and I reviewed, edited, and
+debugged from there rather than accepting it as-is. This is the largest of
+my four projects and it shows in how much documentation exists; all four
+went through the same process, worth saying directly rather than leaving you
+to guess why the writing reads consistently across my repos.
 
-There's a long list of real bugs the tests caught along the way (the full
-list is in [docs/WALKTHROUGH.md](docs/WALKTHROUGH.md), and it's genuinely the
-most interesting part of the project to read). The one I'd point to first:
-once the design went multi-CU with a shared L2, the atomic histogram test
-started coming out with every count exactly doubled. The L2 was re-sampling a
-port's request signal on the same cycle it acknowledged it, so a single
-atomic op got issued twice, invisibly, since loads and stores don't have an
-exact-count invariant to catch it against. Fixed by deasserting the request
-combinationally on ack. That one only shows up because atomics are the one
-operation where "ran twice" is externally observable.
+Where I actually did the work myself was the hardware debugging, once things
+were running against the golden ISS and started disagreeing with it in ways
+that mattered. There's a long list of real bugs the tests caught along the
+way; the full list is in [docs/WALKTHROUGH.md](docs/WALKTHROUGH.md) and it's
+genuinely the most interesting part of the project to read. The one I'd
+point to first: once the design went multi-CU with a shared L2, the atomic
+histogram test started coming out with every count exactly doubled. The L2
+was re-sampling a port's request signal on the same cycle it acknowledged
+it, so a single atomic op got issued twice, invisibly, since ordinary loads
+and stores don't have an exact-count invariant to catch that against. Fixed
+by deasserting the request combinationally on ack. That bug only shows up
+because atomics are the one operation where "ran twice" is externally
+observable, everything else would have looked fine.
 
-Happy to talk through any part of this in more depth: the reconvergence
-stack, the barrel pipeline, the L1/L2 coherence story, any of it.
+Ask me about the reconvergence stack, the barrel pipeline, the L1/L2
+coherence story, or any of the other bugs in the walkthrough, happy to talk
+through all of it.

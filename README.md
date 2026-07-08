@@ -32,7 +32,7 @@ reproduces the software-driven pipeline exactly, and it does.
 - [How it was built](#how-it-was-built)
 - [Repository layout](#repository-layout)
 - [Deferred](#deferred-documented-not-built)
-- [Tooling](#tooling)
+- [AI Use and Tooling](#ai-use-and-tooling)
 
 ## What's in the machine
 
@@ -131,7 +131,11 @@ CALL/RET ABI, GTO warp scheduling, texture compression, trilinear filtering.
 And it's simulation-first: the synthesis flow proves the design elaborates and
 the CU synthesizes, but no bitstream has touched a physical board yet.
 
-## Tooling
+## AI Use and Tooling
 
-Build toolchain, AI-assisted coding, and a real hardware race it caught are
-covered in [TOOLING.md](TOOLING.md).
+Up front: I used AI (Claude Code) throughout this project, for the code and
+for essentially all of these docs, this section included. This is the
+biggest of my four projects and it shows in the volume of documentation. I
+wrote the spec and milestone plan, drove the build, and did the hardware
+debugging myself. The build toolchain and a real hardware race it caught are
+in [TOOLING.md](TOOLING.md).
