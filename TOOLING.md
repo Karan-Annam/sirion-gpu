@@ -2,46 +2,29 @@
 
 ## Build and verification
 
-- Verilator 5.x for RTL simulation (both 5.040 on MSYS2 and 5.020 on WSL
-  Ubuntu are exercised by the suite)
+- Verilator 5.x (5.040 on MSYS2, 5.020 on WSL, both exercised by the suite)
 - g++ / C++17 for the golden ISS, the RTL testbenches, and the CLI runners
-- Python for the assembler (`scripts/asm.py`), the C-like compiler
-  (`scripts/sirc.py`), and small tools like the PPM-to-PNG converter and the
-  waveform-to-text viewer, never for anything that needs to be a reference
-  result
-- GNU Make and bash, with `run_all.sh` as the one command that runs the ISS
-  suite, the compiler suite, and the full RTL suite (79 tests) in one shot
-- SystemVerilog Assertions compiled into the RTL and checked under
-  `--assert`, plus VCD waveform tracing on by default
+- Python for the assembler and compiler (`asm.py`, `sirc.py`) and small
+  tools, never for anything that needs to be a reference result
+- GNU Make and bash, `run_all.sh` runs the ISS suite, the compiler suite,
+  and all 79 RTL tests
+- SVA compiled into the RTL under `--assert`, VCD tracing on by default
 
-Host-specific gotchas (the MSYS2 PATH trap, Verilator version differences,
-Windows SDK macro collisions, viewing PPM renders and waveforms) are in
-[docs/BUILDING.md](docs/BUILDING.md).
+Host quirks (the MSYS2 PATH trap, Verilator version differences, Windows SDK
+macro collisions) are in [docs/BUILDING.md](docs/BUILDING.md).
 
-## How much of this is AI, honestly
+## AI use
 
-A lot of the first-draft code, and essentially all of the documentation,
-including this file, WALKTHROUGH.md, and the README. Claude Code built most
-of it from a spec and milestone plan I wrote, and I reviewed, edited, and
-debugged from there rather than accepting it as-is. This is the largest of
-my four projects and it shows in how much documentation exists; all four
-went through the same process, worth saying directly rather than leaving you
-to guess why the writing reads consistently across my repos.
+Built with Claude Code from a spec and milestone plan I wrote, with me doing
+the hardware debugging as each stage came up against the golden ISS. This is
+the biggest of my four projects, and most of the documentation went through
+the same process.
 
-Where I actually did the work myself was the hardware debugging, once things
-were running against the golden ISS and started disagreeing with it in ways
-that mattered. There's a long list of real bugs the tests caught along the
-way; the full list is in [docs/WALKTHROUGH.md](docs/WALKTHROUGH.md) and it's
-genuinely the most interesting part of the project to read. The one I'd
-point to first: once the design went multi-CU with a shared L2, the atomic
-histogram test started coming out with every count exactly doubled. The L2
-was re-sampling a port's request signal on the same cycle it acknowledged
-it, so a single atomic op got issued twice, invisibly, since ordinary loads
-and stores don't have an exact-count invariant to catch that against. Fixed
-by deasserting the request combinationally on ack. That bug only shows up
-because atomics are the one operation where "ran twice" is externally
-observable, everything else would have looked fine.
+`docs/WALKTHROUGH.md` has the full list of bugs the tests caught along the
+way if you want to see how the debugging actually went. One that stands out:
+a shared-L2 race that resampled a port's request on the same cycle it was
+acked, silently doubling every atomic op until an exact-count check caught
+it.
 
-Ask me about the reconvergence stack, the barrel pipeline, the L1/L2
-coherence story, or any of the other bugs in the walkthrough, happy to talk
-through all of it.
+Ask about the reconvergence stack, the barrel pipeline, the L1/L2 coherence
+story, or anything in the walkthrough.
