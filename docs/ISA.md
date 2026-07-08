@@ -1,11 +1,11 @@
-# Sirion ISA v1 — Instruction Set Reference
+# Sirion ISA v1: Instruction Set Reference
 
 This is the authoritative encoding reference for the Sirion GPU. It is kept in lockstep with
 three implementations, and the assemble→run self-checking tests fail if any drifts:
 
-- `rtl/sirion_pkg.sv` — RTL opcode enum + field extractors (hardware decode).
-- `sim/iss/isa.hpp` — C++ decode/encode used by the golden ISS.
-- `scripts/asm.py` — the Python assembler.
+- `rtl/sirion_pkg.sv`: RTL opcode enum + field extractors (hardware decode).
+- `sim/iss/isa.hpp`: C++ decode/encode used by the golden ISS.
+- `scripts/asm.py`: the Python assembler.
 
 ---
 
@@ -55,8 +55,8 @@ Every instruction shares a 9-bit prefix: a 6-bit **opcode** and a 3-bit **guard*
 
 | Format | Used by | 22:19 | 18:15 | 14:11 | 10:0 |
 |--------|---------|-------|-------|-------|------|
-| **R**  | ADD…SEQ | `rd` | `rs1` | `rs2` | — |
-| **R1** | MOV, NOT | `rd` | `rs1` | — | — |
+| **R**  | ADD…SEQ | `rd` | `rs1` | `rs2` | none |
+| **R1** | MOV, NOT | `rd` | `rs1` | none | none |
 | **I**  | ADDI…SLTIU | `rd` | `rs1` | `imm15` (bits 14:0, signed) | |
 | **U**  | MOVI, RDSR | `rd` | `imm19` (bits 18:0, signed / srid) | | |
 | **B**  | BRA, SSY, CALL | `off23` (bits 22:0, signed, in instruction words) | | | |
@@ -122,13 +122,13 @@ Immediates are sign-extended to 32 bits. Branch/SSY targets are **PC-relative in
 | 35 | `FADD` | R  | `Rd = Rs1 +f Rs2` (binary32; M15, §5) |
 | 36 | `FSUB` | R  | `Rd = Rs1 -f Rs2` |
 | 37 | `FMUL` | R  | `Rd = Rs1 *f Rs2` |
-| 38 | `FFMA` | R  | `Rd = Rs1 *f Rs2 +f Rd` — **Rd is the accumulator input** (3rd RF read port) |
+| 38 | `FFMA` | R  | `Rd = Rs1 *f Rs2 +f Rd`; **Rd is the accumulator input** (3rd RF read port) |
 | 39 | `FMIN` | R  | float min (total order on FTZ-canonicalized keys) |
 | 3A | `FMAX` | R  | float max |
 | 3B | `I2F`  | R1 | `Rd = float(int Rs1)` (truncating) |
 | 3C | `F2I`  | R1 | `Rd = int(float Rs1)` (truncate toward zero, saturating) |
-| 3D | `FSETP`| P  | `P[pd][lane] = fcompare(cmp, Rs1, Rs2)` — float ISETP; LTU/GEU reserved |
-| 3E | `ATOMG.fn` | R+fn | global atomic RMW: `old = mem32[Rs1]; mem32[Rs1] = fn(old, Rs2[, Rd]); Rd = old` — fn in bits [10:8]: 0=ADD 1=MIN 2=MAX 3=EXCH 4=CAS (compare value passed in Rd); lanes commit in lane order (M16) |
+| 3D | `FSETP`| P  | `P[pd][lane] = fcompare(cmp, Rs1, Rs2)`, float ISETP; LTU/GEU reserved |
+| 3E | `ATOMG.fn` | R+fn | global atomic RMW: `old = mem32[Rs1]; mem32[Rs1] = fn(old, Rs2[, Rd]); Rd = old`; fn in bits [10:8]: 0=ADD 1=MIN 2=MAX 3=EXCH 4=CAS (compare value passed in Rd); lanes commit in lane order (M16) |
 | 3F | `ATOMS.fn` | R+fn | same on shared memory |
 
 ### 3.1 Floating-point semantics (M15)
@@ -205,7 +205,7 @@ lanes all agree, the branch is uniform (no divergence). If they split, the hardw
 reconvergence stack**:
 
 1. The assembler emits `SSY R` before a potentially-divergent branch, naming the reconvergence point `R`
-   (the immediate post-dominator — where the paths merge).
+   (the immediate post-dominator, where the paths merge).
 2. On a divergent `BRA`, the current stack frame becomes the **join frame** (holds the full pre-divergence
    mask, resumes at `R`, keeps its outer reconvergence target); two child frames are pushed for the taken
    and fall-through paths, each with `rpc = R`.

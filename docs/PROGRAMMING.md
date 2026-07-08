@@ -1,7 +1,7 @@
 # Programming the Sirion GPU
 
 This is the hands-on guide: how to **write a program, compile it, and run it** on the Sirion
-GPU — first on the golden simulator (instant), then on the real RTL under Verilator. No C++
+GPU, first on the golden simulator (instant), then on the real RTL under Verilator. No C++
 required for any of it.
 
 All commands run from `gpu_project/` in an MSYS2/Git-Bash or WSL shell.
@@ -83,7 +83,7 @@ Sirion is a SIMT GPU, programmed like CUDA/OpenCL:
 - A **launch** runs a 1-D **grid** of **blocks**; each block has `tpb` **threads**
   (up to 256). The hardware dispatcher hands blocks to free **compute units**.
 - Threads execute in **warps of 32** in lock-step. `if`/`while` on thread-dependent values
-  work fine — the hardware masks lanes and reconverges (it costs performance, not
+  work fine, the hardware masks lanes and reconverges (it costs performance, not
   correctness).
 - Each thread has its own 16 registers. Blocks share **shared memory** (4 KB) and
   synchronize with a **barrier**. All blocks share **global memory** through the caches.
@@ -105,17 +105,17 @@ Builtins available in the C-like language:
 - **Types**: `int`, `float` (binary32), and pointer parameters `int*` / `float*`. Mixed
   int/float expressions convert the int side automatically; explicit casts: `itof(e)`,
   `ftoi(e)` (truncates).
-- **Operators**: `+ - *` (int and float), `/` (float only — compiled to reciprocal ×
+- **Operators**: `+ - *` (int and float), `/` (float only, compiled to reciprocal ×
   multiply; there is no integer divide in the ISA, use shifts), `& | ^ ~ << >>` (int),
   unary `-`, comparisons `< <= > >= == !=` (int `ISETP` / float `FSETP`).
 - **Control**: `if`/`else`, `while`, `for`.
 - **Memory**: array indexing on pointer params (`a[i]`, `out[i] = ...`);
   `__shared__ int buf[256];` block-shared arrays; `barrier();` block barrier.
 - **Atomics** (return the old value): `atomic_add(p, idx, val)`, `atomic_min`,
-  `atomic_max`, `atomic_exch(p, idx, val)`, `atomic_cas(p, idx, cmp, val)` — `p` is a
+  `atomic_max`, `atomic_exch(p, idx, val)`, `atomic_cas(p, idx, cmp, val)`. `p` is a
   pointer param or `__shared__` array.
 - **SFU intrinsics** (float): `rcpf(x)`, `rsqrtf(x)`, `sinf(x)`, `cosf(x)`.
-- **Device functions** — always inlined (as real GPU compilers default):
+- **Device functions**, always inlined (as real GPU compilers default):
 
 ```c
 func float sq(float v) { return v * v; }
@@ -130,14 +130,14 @@ kernel normalize(float* out, float* x, float* y, int n) {
 ```
 
 - **Register spilling**: locals beyond the register budget spill automatically to
-  per-thread shared-memory slots — many-local kernels compile and run correctly (just
+  per-thread shared-memory slots, many-local kernels compile and run correctly (just
   slower). Very deep single *expressions* can still exhaust temporaries; split them.
 - **Constants** of any 32-bit width work (wide ones are materialized in several
   instructions).
 
 More examples in `examples/kernels/`: `reduce_shared.k` (shared memory + barrier),
-`hist.k` (atomics), `saxpyf.k` (floats), `gen_checker.k` (procedural texture — used by
-the M20 graphics demo), `spill.k` (14 chained locals). Look at the generated `.s` — it is
+`hist.k` (atomics), `saxpyf.k` (floats), `gen_checker.k` (procedural texture, used by
+the M20 graphics demo), `spill.k` (14 chained locals). Look at the generated `.s`, it is
 the best way to learn the assembly.
 
 ## 4. Sirion assembly (`.s` files, `scripts/asm.py`)
@@ -152,15 +152,15 @@ thread), predicates `P1..P3` (`P0` is constant true). Any instruction can be gua
 |-------|--------------|
 | integer | `ADD SUB MUL MULH AND OR XOR NOT SHL SHR SRA SLT SLTU MIN MAX SEQ` (3-reg) |
 | immediates | `ADDI ANDI ORI XORI SHLI SHRI SRAI SLTI SLTIU` (`op Rd, Rs, #imm15`), `MOVI Rd, #imm19`, `MOV Rd, Rs` |
-| predicates | `ISETP.cc Pd, Ra, Rb_or_imm` / `FSETP.cc Pd, Ra, Rb` — cc ∈ `EQ NE LT LE GT GE LTU GEU` |
+| predicates | `ISETP.cc Pd, Ra, Rb_or_imm` / `FSETP.cc Pd, Ra, Rb`, cc ∈ `EQ NE LT LE GT GE LTU GEU` |
 | control | `BRA label` `SSY label` `EXIT` `BAR` (`SSY` marks the reconvergence point **before** a divergent branch) |
 | special regs | `RDSR Rd, TID_FLAT|LANEID|WARPID|TID_X|NTID_X|CTAID_X|NCTAID_X` |
 | memory | `LDG/STG Rd, [Rb+off]` global (byte addr) · `LDS/STS` shared · `LDC Rd, c[i]` params |
 | float (binary32) | `FADD FSUB FMUL FMIN FMAX` (3-reg) · `FFMA Rd, Ra, Rb` (Rd = Ra*Rb + **Rd**) · `I2F F2I Rd, Rs` |
 | SFU | `MUFU.RCP/RSQRT/SIN/COS Rd, Rs` (approximate transcendentals) |
-| atomics | `ATOMG.fn Rd, [Rb], Rs` global / `ATOMS.fn` shared — fn ∈ `ADD MIN MAX EXCH CAS`; `Rd` gets the OLD value; for CAS the compare value is passed in `Rd` |
+| atomics | `ATOMG.fn Rd, [Rb], Rs` global / `ATOMS.fn` shared, fn ∈ `ADD MIN MAX EXCH CAS`; `Rd` gets the OLD value; for CAS the compare value is passed in `Rd` |
 
-FP semantics: round-toward-zero, denormals flush to zero, Inf/NaN out of scope — fully
+FP semantics: round-toward-zero, denormals flush to zero, Inf/NaN out of scope. Fully
 deterministic and identical between the ISS and the RTL.
 
 ### The divergence pattern
@@ -178,7 +178,7 @@ Ldone:
 
 ### A complete assembly kernel (histogram with atomics)
 
-`tests/kernels/histogram.s` — every thread atomically increments a bin; works across all
+`tests/kernels/histogram.s`, every thread atomically increments a bin; works across all
 warps, blocks, and compute units because atomics serialize at the shared L2:
 
 ```asm
@@ -211,13 +211,12 @@ python scripts/asm.py tests/kernels/histogram.s -o build/histogram.gpubin
 
 More studied examples in `tests/kernels/`: `saxpy_float.s` (FFMA), `rsqrt_map.s` (SFU),
 `block_shuffle.s` (shared memory + barrier across warps), `m6_shared.s` (shared memory),
-`vs_persp.s` + `fs_texmod.s` (the M19 vertex/fragment **shaders** — shaders are just
+`vs_persp.s` + `fs_texmod.s` (the M19 vertex/fragment **shaders**, shaders are just
 kernels here).
 
 ## 5. Memory map & parameter conventions
 
-- **Global memory**: byte-addressed; the runner's device has 32 KB (`gpu_top` default) —
-  keep buffers under `0x8000`. Buffers are wherever you put them; pass base addresses as
+- **Global memory**: byte-addressed; the runner's device has 32 KB (`gpu_top` default), keep buffers under `0x8000`. Buffers are wherever you put them; pass base addresses as
   parameters through the constant bank.
 - **Constant bank** (`c[0..63]`): kernel parameters, set by the host (`--const`). `LDC` is
   word-indexed.
@@ -225,7 +224,7 @@ kernels here).
   launch, synchronized with `BAR`.
 - Loads/stores are 32-bit words; addresses should be 4-byte aligned.
 
-## 6. Performance tips (they are measurable — the RTL runner prints counters)
+## 6. Performance tips (they are measurable, the RTL runner prints counters)
 
 - **Coalesce**: consecutive lanes reading consecutive words → one L1 line transaction per
   8 lanes. Strided or random access serializes into more transactions.
@@ -256,4 +255,4 @@ everything.
   - `LDC` is **word**-indexed (`c[3]`), `LDG` is **byte**-addressed;
   - `FFMA Rd, Ra, Rb` uses **Rd** as the accumulator input (read-modify-write);
   - guards: `@P1` runs where the bit is **set**; `@!P1` where clear;
-  - immediates are 15-bit signed — `MOVI` (19-bit) or build wider values with `SHLI`+`OR`.
+  - immediates are 15-bit signed, `MOVI` (19-bit) or build wider values with `SHLI`+`OR`.

@@ -1,4 +1,4 @@
-# Building — environment notes and gotchas
+# Building: environment notes and gotchas
 
 Everything runs from either **native MSYS2 UCRT64** (Windows) or **WSL/Linux**;
 the scripts auto-detect the host via `uname` and pick the right toolchain.
@@ -17,7 +17,7 @@ listed below.
 ## MSYS2 traps
 
 1. **PATH ordering.** `/c/msys64/ucrt64/bin` MUST precede `/mingw64/bin`, or
-   `g++` fails *silently* — exit 1, empty stderr — from mismatched
+   `g++` fails *silently* (exit 1, empty stderr) from mismatched
    libgmp/libmpfr DLLs. Symptom: `g++ --version` works but any real compile
    instantly dies with no message. The scripts export PATH first thing.
 2. **The Perl `verilator` wrapper is broken** on some installs
@@ -27,15 +27,15 @@ listed below.
    `OUT`, and `DrawState` are all macros on Windows; each one broke a build at
    some point (`Framebuffer::init(..., int32_t far)` was the first). If a
    perfectly reasonable name produces a baffling error on Windows only, suspect
-   wingdi.h. (`inside` and `tri` are SystemVerilog keywords — same category of
+   wingdi.h. (`inside` and `tri` are SystemVerilog keywords: same category of
    surprise, different tool.)
 
 ## Verilator notes
 
-- **Nested `--Mdir` isn't auto-created** — `mkdir -p` first.
+- **Nested `--Mdir` isn't auto-created**, `mkdir -p` first.
 - **`undefined reference to sc_time_stamp()`** at link: Verilator's legacy
   trace path references it. Fixed with a forced-emit stub in
-  `sim/rtl_driver.hpp` (`__attribute__((used))` — plain `inline` gets dropped
+  `sim/rtl_driver.hpp` (`__attribute__((used))`; plain `inline` gets dropped
   because nothing calls it).
 - **Multiple DUTs in one executable break tracing** if they all register with
   the global `VerilatedContext`. Each `Sim` owns a private context and
@@ -43,12 +43,12 @@ listed below.
 - **5.020 vs 5.040 differences** found the hard way: 5.020 rejects
   >64-iteration loops with delayed array assignments (the L2's 256-set reset;
   `--unroll-count 1024` fixes it), and the two versions path `--exe` sources
-  differently in the generated sub-make — the scripts pass testbench paths as
+  differently in the generated sub-make. The scripts pass testbench paths as
   absolute (via `cygpath -m` on MSYS2) so both work.
 - `--build -j 0` did **not** parallelize the sub-make once the model got large
   (9+ minutes); the scripts verilate first, then run `make -j $(nproc)`
   explicitly (~25 s).
-- On WSL, heavy parallel builds on the 9p `/mnt/c` mount are flaky — copy the
+- On WSL, heavy parallel builds on the 9p `/mnt/c` mount are flaky. Copy the
   tree to ext4 (`~/`) for a clean WSL run.
 
 ## Viewing output
@@ -56,14 +56,14 @@ listed below.
 - **Renders** are binary (P6) PPM. Valid PPM, but many viewers only accept the
   ASCII (P3) variant and call a good P6 file "not a PPM". `make png` converts
   every `build/*.ppm` to a PNG (Pillow if installed, otherwise a built-in
-  stdlib zlib encoder — no dependencies). Terminal preview:
+  stdlib zlib encoder, no dependencies). Terminal preview:
   `python scripts/ppm_tool.py build/render_tex_rtl.ppm`.
 - **Waveforms**: `make wavetext` renders the newest VCD as a terminal table
   (no GTKWave/X needed). GTKWave opens VCDs with an empty pane until you drag
-  signals in and Zoom-Fit — that's GTKWave, not the file.
+  signals in and Zoom-Fit, that's GTKWave, not the file.
 
 ## Conventions
 
 SVA assertions are compiled in (`--assert`) and guarded by
 `` `ifndef SYNTHESIS ``; waveform tracing is on (`--trace`). RTL is listed in
-explicit compile order in the Makefile — the package first, never globbed.
+explicit compile order in the Makefile, the package first, never globbed.

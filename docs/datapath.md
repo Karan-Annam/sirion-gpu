@@ -1,7 +1,7 @@
-# Sirion datapath primitives (M2) — design notes
+# Sirion datapath primitives (M2), design notes
 
 The M2 modules are the building blocks of the Compute Unit's execute path. Each is a small,
-independently-verified leaf module (no integrating top yet — that arrives in M3). All are checked
+independently-verified leaf module (no integrating top yet, that arrives in M3). All are checked
 against the same golden C++ functions the ISS uses, so RTL and the golden model provably agree.
 
 | Module | File | Kind | Golden reference | Random checks |
@@ -14,7 +14,7 @@ against the same golden C++ functions the ISS uses, so RTL and the golden model 
 
 ## 1. Integer ALU (`alu.sv`)
 
-Combinational, scalar 32-bit — one lane's datapath; the SIMT execute stage (M4) replicates it
+Combinational, scalar 32-bit, one lane's datapath; the SIMT execute stage (M4) replicates it
 across a warp's 32 lanes. Inputs: `opcode`, `a`, `b`. The caller selects `b` (rs2 or immediate)
 and, for MOV/MOVI, passes the pass-through value in `a`, so the ALU only needs the opcode plus two
 operands. `is_alu` distinguishes handled ALU opcodes from everything else (so execute routes non-ALU
