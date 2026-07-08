@@ -133,7 +133,6 @@ the CU synthesizes, but no bitstream has touched a physical board yet.
 
 ## AI Use and Tooling
 
-Built with AI assistance (Claude Code) from a spec and milestone plan I
-wrote, with me doing the hardware debugging throughout. This is the biggest
-of my four projects, and the documentation follows the same process. More on
-that split, and the toolchain, in [TOOLING.md](TOOLING.md).
+These docs were drafted with AI assistance and edited by me (this is the
+biggest of my four projects, and it shows in the volume of documentation).
+Code-level AI use and the build toolchain are in [TOOLING.md](TOOLING.md).
