@@ -15,16 +15,10 @@ macro collisions) are in [docs/BUILDING.md](docs/BUILDING.md).
 
 ## AI use
 
-Built with Claude Code from a spec and milestone plan I wrote, with me doing
-the hardware debugging as each stage came up against the golden ISS. This is
-the biggest of my four projects, and most of the documentation went through
-the same process.
-
-`docs/WALKTHROUGH.md` has the full list of bugs the tests caught along the
-way if you want to see how the debugging actually went. One that stands out:
-a shared-L2 race that resampled a port's request on the same cycle it was
-acked, silently doubling every atomic op until an exact-count check caught
-it.
+I wrote the RTL with AI assistance across all the milestones, then debugged
+it myself and read through it to modify things as issues came up against
+the golden ISS. This is the biggest of my four projects, and the
+documentation went through the same process.
 
 Ask about the reconvergence stack, the barrel pipeline, the L1/L2 coherence
-story, or anything in the walkthrough.
+story, or anything else here.
